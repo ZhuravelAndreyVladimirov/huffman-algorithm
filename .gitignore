@@ -1,0 +1,17 @@
+# Build
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+publish/
+
+# Visual Studio / Rider
+.vs/
+*.user
+*.suo
+*.cache
+.idea/
+
+# OS
+Thumbs.db
+Desktop.ini
