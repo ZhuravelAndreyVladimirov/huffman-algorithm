@@ -1,3 +1,5 @@
+using HuffmanCodec.Core.Models;
+
 namespace HuffmanCodec.Core.Abstractions;
 
 public interface IHuffmanArchiveReader
@@ -6,7 +8,7 @@ public interface IHuffmanArchiveReader
     Task<byte[]> ReadDecompressedAsync(
         Stream source,
         CancellationToken cancellationToken = default,
-        IProgress<int>? progress = null);
+        IProgress<CodecProgress>? progress = null);
 
     byte[] ReadDecompressed(Stream source);
 }

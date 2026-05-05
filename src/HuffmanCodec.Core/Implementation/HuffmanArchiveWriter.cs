@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using HuffmanCodec.Core.Abstractions;
+using HuffmanCodec.Core.Models;
 
 namespace HuffmanCodec.Core.Implementation;
 
@@ -52,42 +53,42 @@ public sealed class HuffmanArchiveWriter : IHuffmanArchiveWriter
         Stream source,
         Stream destination,
         CancellationToken cancellationToken = default,
-        IProgress<int>? progress = null)
+        IProgress<CodecProgress>? progress = null)
     {
-        progress?.Report(5);
+        CodecProgressReporter.Report(progress, 5, "read_input");
         using var ms = new MemoryStream();
         await source.CopyToAsync(ms, cancellationToken).ConfigureAwait(false);
-        progress?.Report(18);
+        CodecProgressReporter.Report(progress, 18, "read_input");
         var data = ms.ToArray();
         var freq = _frequencies.Analyze(data);
-        progress?.Report(30);
+        CodecProgressReporter.Report(progress, 30, "frequencies");
         var tree = _treeBuilder.BuildTree(freq);
-        progress?.Report(40);
+        CodecProgressReporter.Report(progress, 40, "build_tree");
         var codes = _codeTable.BuildCodes(tree, freq);
-        progress?.Report(48);
+        CodecProgressReporter.Report(progress, 48, "code_table");
         var (payload, padBits) = _bitEncoder.Encode(data, codes);
-        progress?.Report(58);
+        CodecProgressReporter.Report(progress, 58, "encode");
 
         await destination.WriteAsync(HuffmanArchiveFormat.Magic.ToArray(), cancellationToken).ConfigureAwait(false);
         await destination.WriteAsync(new[] { HuffmanArchiveFormat.Version }, cancellationToken).ConfigureAwait(false);
-        progress?.Report(62);
+        CodecProgressReporter.Report(progress, 62, "write_header");
         var lenBuf = new byte[8];
         BinaryPrimitives.WriteInt64LittleEndian(lenBuf, data.LongLength);
         await destination.WriteAsync(lenBuf, cancellationToken).ConfigureAwait(false);
-        progress?.Report(65);
+        CodecProgressReporter.Report(progress, 65, "write_header");
         for (var i = 0; i < 256; i++)
         {
             var b = new byte[4];
             BinaryPrimitives.WriteUInt32LittleEndian(b, freq[i]);
             await destination.WriteAsync(b, cancellationToken).ConfigureAwait(false);
             if ((i & 31) == 31)
-                progress?.Report(65 + 22 * (i + 1) / 256);
+                CodecProgressReporter.Report(progress, 65 + 22 * (i + 1) / 256, "write_header");
         }
 
-        progress?.Report(88);
+        CodecProgressReporter.Report(progress, 88, "write_payload");
         if (payload.Length > 0)
             await destination.WriteAsync(payload, cancellationToken).ConfigureAwait(false);
         await destination.WriteAsync(new[] { padBits }, cancellationToken).ConfigureAwait(false);
-        progress?.Report(96);
+        CodecProgressReporter.Report(progress, 96, "write_payload");
     }
 }

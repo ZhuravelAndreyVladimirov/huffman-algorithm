@@ -5,18 +5,18 @@ namespace HuffmanCodec.Core.Abstractions;
 /// <summary>Фасад сжатия/распаковки для UI и тестов.</summary>
 public interface IHuffmanCodec
 {
-    /// <param name="progress">0–100, этапы чтения/построения дерева/кодирования/записи.</param>
+    /// <param name="progress">0–100 и идентификатор этапа.</param>
     Task CompressFileAsync(
         string inputPath,
         string outputPath,
         CancellationToken cancellationToken = default,
-        IProgress<int>? progress = null);
+        IProgress<CodecProgress>? progress = null);
 
     Task DecompressFileAsync(
         string inputPath,
         string outputPath,
         CancellationToken cancellationToken = default,
-        IProgress<int>? progress = null);
+        IProgress<CodecProgress>? progress = null);
 
     /// <summary>Читает файл, строит дерево и таблицу для визуализации (без записи архива).</summary>
     Task<CodecPreviewResult> PreviewAsync(string path, CancellationToken cancellationToken = default);

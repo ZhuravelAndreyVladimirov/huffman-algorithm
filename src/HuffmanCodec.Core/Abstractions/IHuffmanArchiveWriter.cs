@@ -1,3 +1,5 @@
+using HuffmanCodec.Core.Models;
+
 namespace HuffmanCodec.Core.Abstractions;
 
 public interface IHuffmanArchiveWriter
@@ -7,7 +9,7 @@ public interface IHuffmanArchiveWriter
         Stream source,
         Stream destination,
         CancellationToken cancellationToken = default,
-        IProgress<int>? progress = null);
+        IProgress<CodecProgress>? progress = null);
 
     void WriteCompressed(Stream source, Stream destination);
 }

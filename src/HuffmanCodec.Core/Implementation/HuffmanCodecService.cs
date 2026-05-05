@@ -1,4 +1,5 @@
 using HuffmanCodec.Core.Abstractions;
+using HuffmanCodec.Core.Models;
 
 namespace HuffmanCodec.Core.Implementation;
 
@@ -28,30 +29,30 @@ public sealed class HuffmanCodecService : IHuffmanCodec
         string inputPath,
         string outputPath,
         CancellationToken cancellationToken = default,
-        IProgress<int>? progress = null)
+        IProgress<CodecProgress>? progress = null)
     {
-        progress?.Report(0);
+        CodecProgressReporter.Report(progress, 0, "prepare");
         await using var input = File.OpenRead(inputPath);
-        progress?.Report(2);
+        CodecProgressReporter.Report(progress, 2, "open_input");
         await using var output = File.Create(outputPath);
-        progress?.Report(4);
+        CodecProgressReporter.Report(progress, 4, "open_output");
         await _archiveWriter.WriteCompressedAsync(input, output, cancellationToken, progress).ConfigureAwait(false);
-        progress?.Report(100);
+        CodecProgressReporter.Report(progress, 100, "done");
     }
 
     public async Task DecompressFileAsync(
         string inputPath,
         string outputPath,
         CancellationToken cancellationToken = default,
-        IProgress<int>? progress = null)
+        IProgress<CodecProgress>? progress = null)
     {
-        progress?.Report(0);
+        CodecProgressReporter.Report(progress, 0, "prepare");
         await using var input = File.OpenRead(inputPath);
-        progress?.Report(2);
+        CodecProgressReporter.Report(progress, 2, "open_input");
         var data = await _archiveReader.ReadDecompressedAsync(input, cancellationToken, progress).ConfigureAwait(false);
-        progress?.Report(92);
+        CodecProgressReporter.Report(progress, 92, "write_output");
         await File.WriteAllBytesAsync(outputPath, data, cancellationToken).ConfigureAwait(false);
-        progress?.Report(100);
+        CodecProgressReporter.Report(progress, 100, "done");
     }
 
     public async Task<CodecPreviewResult> PreviewAsync(string path, CancellationToken cancellationToken = default)

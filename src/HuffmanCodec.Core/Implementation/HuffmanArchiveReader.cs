@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using HuffmanCodec.Core.Abstractions;
+using HuffmanCodec.Core.Models;
 
 namespace HuffmanCodec.Core.Implementation;
 
@@ -24,18 +25,18 @@ public sealed class HuffmanArchiveReader : IHuffmanArchiveReader
     public async Task<byte[]> ReadDecompressedAsync(
         Stream source,
         CancellationToken cancellationToken = default,
-        IProgress<int>? progress = null)
+        IProgress<CodecProgress>? progress = null)
     {
-        progress?.Report(8);
+        CodecProgressReporter.Report(progress, 8, "read_input");
         using var ms = new MemoryStream();
         await source.CopyToAsync(ms, cancellationToken).ConfigureAwait(false);
-        progress?.Report(22);
+        CodecProgressReporter.Report(progress, 22, "read_input");
         return ReadDecompressed(ms.ToArray().AsSpan(), progress);
     }
 
-    private byte[] ReadDecompressed(ReadOnlySpan<byte> file, IProgress<int>? progress)
+    private byte[] ReadDecompressed(ReadOnlySpan<byte> file, IProgress<CodecProgress>? progress)
     {
-        progress?.Report(28);
+        CodecProgressReporter.Report(progress, 28, "parse_header");
         if (file.Length < HuffmanArchiveFormat.HeaderSize + 1)
             throw new InvalidDataException("Файл слишком короткий для заголовка и маркера выравнивания.");
 
@@ -45,7 +46,7 @@ public sealed class HuffmanArchiveReader : IHuffmanArchiveReader
         if (file[4] != HuffmanArchiveFormat.Version)
             throw new InvalidDataException($"Неподдерживаемая версия формата: {file[4]}.");
 
-        progress?.Report(38);
+        CodecProgressReporter.Report(progress, 38, "parse_header");
         var originalLength = BinaryPrimitives.ReadInt64LittleEndian(file.Slice(5, 8));
         if (originalLength < 0)
             throw new InvalidDataException("Отрицательная длина исходных данных.");
@@ -58,7 +59,7 @@ public sealed class HuffmanArchiveReader : IHuffmanArchiveReader
             off += 4;
         }
 
-        progress?.Report(48);
+        CodecProgressReporter.Report(progress, 48, "read_frequencies");
         var padBits = file[^1];
         if (padBits > 7)
             throw new InvalidDataException("Некорректное значение padBits.");
@@ -70,9 +71,9 @@ public sealed class HuffmanArchiveReader : IHuffmanArchiveReader
         var payload = file.Slice(off, payloadLen).ToArray();
 
         var tree = _treeBuilder.BuildTree(freq);
-        progress?.Report(58);
+        CodecProgressReporter.Report(progress, 58, "build_tree");
         var decoded = _bitDecoder.Decode(payload, padBits, tree, originalLength, freq);
-        progress?.Report(88);
+        CodecProgressReporter.Report(progress, 88, "decode");
         return decoded;
     }
 }
